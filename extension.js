@@ -1,44 +1,88 @@
 const vscode = require('vscode');
 
-const {
-	Variable
-} = require('./classes')
+
 const {
 	characters: {
-		alphanumerical,
 		whitespaces
 	},
 	functions,
 	keywords,
 	dot
-} = require('./thingk')
+} = require('./main/thingk')
 
-const types = require('./types')
+const {
+	types
+} = require('./main/types')
+
+const {
+    clearStrings,
+    findVariables,
+    endsWithFilter,
+    findReturnType,
+    findReturnTypesWithDot,
+    toPropertyCompletion,
+	insideBraces,
+} = require('./main/functions')
 
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
+	vscode.window.showInformationMessage('coolio')
+	const documentSelector = {
+		pattern: '**/*.{smt,gotmpl,go.tmpl,**yag**}'
+	}    // glob pattern, don't mind the '**/*', the .{....} part matches any file extension with
+		// yag in it, matches .gotmpl, .go.tmpl and .smt, WHY DID IT TAKE ME SO LONG TO FIGURE OUT AAAAAA
 
-	// let disposable = vscode.commands.registerCommand('hm.helloWorld', function () {
-	// 	vscode.window.showInformationMessage('Hello World from hm!');
-	// });
-
-	// context.subscriptions.push(disposable);
-
-	const wordCompletionProvider = vscode.languages.registerCompletionItemProvider('smt', {
+	const wordCompletionProvider = vscode.languages.registerCompletionItemProvider(documentSelector, {
 		provideCompletionItems(document, position) {
-			let variableCompletion = [],
-			keywordCompletion = [],
-			functionCompletion = [],
-			textBeforePosition = document.getText(
+			let textBeforePosition = document.getText(
+				new vscode.Range(0, 0, position.line, position.character)
+			)
+			
+			if (!insideBraces(textBeforePosition)) return
+			
+			// TODO: add a negative lookahead so it doesnt trigger on $name, etc.
+			if (endsWithFilter(textBeforePosition, (text) => {
+				return /^[a-zA-Z]+$/g.test(text)
+			})) {
+				// function completion
+				const functionCompletion = functions.map((fn) => {
+					let fun = new vscode.CompletionItem()
+					fun.label = fn
+					fun.insertText = fn
+					fun.kind = vscode.CompletionItemKind.Function
+					return fun
+				})
+			
+				// keywords completion, ex - if, else, end, etc.
+				const keywordCompletion = keywords.map((kw) => {
+					let kwo = new vscode.CompletionItem()
+					kwo.label = kw
+					kwo.kind = vscode.CompletionItemKind.Keyword
+					return kwo
+				})
+			
+				return [
+					...functionCompletion,
+					...keywordCompletion
+				]
+			}
+		}
+	})
+
+	// have to make it seperate due to the trigger on $ :(
+	const variableCompletionProvider = vscode.languages.registerCompletionItemProvider(documentSelector, {
+		provideCompletionItems(document, position) {
+			let = textBeforePosition = document.getText(
 				new vscode.Range(0, 0, position.line, position.character)
 			)
 
-			// variable completion
+			if (!insideBraces(textBeforePosition)) return
+
 			if (endsWithFilter(textBeforePosition, (text) => {
-				return /^\$[\w ]+$/g.test(text)
+				return /^\$[\w ]*$/g.test(text)
 			})) {
 				const cleared = clearStrings(
 					textBeforePosition
@@ -46,82 +90,43 @@ function activate(context) {
 				const variables = findVariables(
 					cleared
 				)
-				console.log(variables, {text: textBeforePosition, cleared})
-				variableCompletion = variables.map(va => {
+				let variableCompletion = variables.map(va => {
 					let v = new vscode.CompletionItem()
 					v.label = va.name
 					v.insertText = va.name
 					v.kind = vscode.CompletionItemKind.Variable
 					return v
 				})
+				return variableCompletion
 			}
-
-
-			// TODO: add a negative lookahead so it doesnt trigger on $name, etc.
-			if (endsWithFilter(textBeforePosition, (text) => {
-				return /^[a-zA-Z]+$/g.test(text)
-			})) {
-				// function completion
-				functionCompletion = functions.map((fn) => {
-					let fun = new vscode.CompletionItem()
-					fun.label = fn
-					fun.insertText = fn
-					fun.kind = vscode.CompletionItemKind.Function
-					return fun
-				})
-
-				// keywords completion, ex - if, else, end, etc.
-				keywordCompletion = keywords.map((kw) => {
-					let kwo = new vscode.CompletionItem()
-					kwo.label = kw
-					kwo.kind = vscode.CompletionItemKind.Keyword
-					return kwo
-				})
-			}
-
-			return [
-				...variableCompletion,
-				...keywordCompletion,
-				...functionCompletion
-			]
 		}
-	})
+	}, '$')
 
-	const dotCompletionProvider = vscode.languages.registerCompletionItemProvider('smt', {
+	// have to make it seperate due to the trigger on '.' :(
+	const dotCompletionProvider = vscode.languages.registerCompletionItemProvider(documentSelector, {
 		provideCompletionItems(document, position) {
 			const textBeforePosition = document.getText(
 				new vscode.Range(0, 0, position.line, position.character)
 			)
 
+			if (!insideBraces(textBeforePosition)) return
+
+			let someText = ''
+
 			if (endsWithFilter(textBeforePosition, (text) => {
-				return /\B\$?(\.\w+)+\b$/g.test(text)
+				return /\B\$?(\.\w*)+$/g.test(text) && ('{(' + whitespaces).includes(textBeforePosition[textBeforePosition.length - (text.length + 1)])
 			})) {
-				/**
-				 * 
-				 * @param {string[]} ar 
-				 * @param {{}} reference
-				 */
-				function toPropertyCompletion(ar, reference) {
-					return ar.map(v => {
-						let va = new vscode.CompletionItem()
-						va.insertText = v
-						va.label = v
-						if (reference[v] === 'func') va.kind = vscode.CompletionItemKind.Method
-						else va.kind = vscode.CompletionItemKind.Field
-						return va
-					})
-				}
-				const [match] = textBeforePosition.match(/\B\$?(\.\w+)+\b$/g)
+				const [match] = textBeforePosition.match(/\B\$?(\.\w*)+$/g)
 				const split = match.split('.')
 				split.shift()
 
-				console.log(JSON.stringify(split))
+				// console.log(JSON.stringify(split))
 				if (split.length === 1) {
-					console.log(toPropertyCompletion(Object.keys(dot), dot))
+					// console.log(toPropertyCompletion(Object.keys(dot), dot))
 					return toPropertyCompletion(Object.keys(dot), dot)
 				}
 
-				let currentType = [],
+				let currentType = {},
 				i = 1
 				for (let mm of split) {
 					if (i === 1) {
@@ -144,104 +149,36 @@ function activate(context) {
 					i++
 				}
 				
+			} else if (
+				endsWithFilter(
+					textBeforePosition,
+					(text) => {
+						someText = text
+						return /\$\w+(\.\w*)+$/g.test(text)
+					}
+				)
+			) {
+				const vars = findVariables(textBeforePosition, 1),
+				[, variableName, rest] = /\$(\w+)((?:\.\w*)+)$/g.exec(someText)
+				if (!(variableName in vars)) return
+				if (vars[variableName].length > 1) return // they defined twice D:
+				let type = findReturnTypesWithDot(
+						findReturnType(
+							vars[variableName][0].value
+						) ?? '', rest
+					)
+				if (!types[type]) return
+				return toPropertyCompletion(Object.keys(types[type]), types[type])
 			}
-
 		}
-	})
+	}, '.')
+
 
 	context.subscriptions.push(wordCompletionProvider)
 	context.subscriptions.push(dotCompletionProvider)
-
-	vscode.workspace.onDidChangeTextDocument((change) => {
-		var editor = vscode.window.activeTextEditor;
-		if (!editor) {
-			// console.log("no editor")
-			return
-		}
-
-		const text = editor.document.getText();
-		const cod = clearStrings(text)
-		// const variables = findVariables(cod)
-	})
+	context.subscriptions.push(variableCompletionProvider)
 }
 
-// dont want strings interfering :(
-/**
- * 
- * @param {string} s 
- * @returns {string}
- */
-function clearStrings(s) {
-	let inString = '', escape = '', result = ''
-	for (let char of s.split('')) {
-		if ((inString === '') && (!'"`'.includes(char))) result += char
-		if ((escape === '\\') && (char === '\\')) escape = 'hello'
-		if ((escape !== '\\') && ('"`'.includes(char))) {
-			if (inString !== '') {
-				if (char === inString) {
-					inString = ''
-				}
-			} else {
-				inString = char
-			}
-		}
-		if (escape !== 'hello') escape = char
-	}
-	return result
-}
-
-
-/**
- * 
- * @param {string} cod 
- */
-function findVariables(cod) {
-	let name = '',
-	variable,
-	result = [],
-	startTemp = 0
-
-	for (let i = 0; i < cod.length; i++) {
-		let char = cod[i]
-		if (variable) {
-			if (alphanumerical.includes(char)) {
-				name += char
-			} else {
-				let sli = cod.slice(i).trim()
-				if (sli.startsWith(':=')) {
-					// dont ask me why we have a class for variables
-					result.push(new Variable({
-						place: [
-							startTemp,
-							i
-						],
-						name
-					}))
-					variable = false
-				}
-			}
-		}
-		if (char === '$') {
-			variable = true
-			startTemp = i
-			name = ''
-		}
-	}
-	return result
-}
-
-/**
- * 
- * @param {string|undefined} s 
- * @param {(string: string) => Boolean} f 
- */
-function endsWithFilter(s, f) {
-	const last = s.split(/[^\$\.\w]+/g).pop()
-	if (f(last)) {
-		return last
-	}
-	return undefined
-}
 
 function deactivate() {}
 

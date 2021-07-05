@@ -1,0 +1,103 @@
+{
+    "types": {
+        "message": {
+            "Author": "user",
+            "ID": "int",
+            "ChannelID": "int",
+            "Content": "string",
+            "Attachments": "slice",
+            "EditedTimestamp": "discordtime",
+            "Embeds": "slice",
+            "GuildID": "int",
+            "MentionEveryone": "bool",
+            "MentionRoles": "slice",
+            "Mentions": "slice",
+            "Pinned": "bool",
+            "Reactions": "slice",
+            "TimeStamp": "discordtime",
+            "Type": "int"
+        },
+        "user": {
+            "Username": "string",
+            "Avatar": "string",
+            "AvatarURL": "func",
+            "UsernameHasInvite": "func",
+            "Bot": "bool",
+            "Discriminator": "int",
+            "ID": "int",
+            "Mention": "string",
+            "String": "string"
+        },
+        "member": {
+            "User": "user",
+            "Roles": "slice",
+            "JoinedAt": "discordtime",
+            "Nick": "string"
+        },
+        "guild": {
+            "AfkChannelID": "int",
+            "AfkTimeout": "int",
+            "Channels": "slice",
+            "DefaultMessageNotifications": "int",
+            "EmbedEnabled": "bool",
+            "Emojis": "slice",
+            "ExplicitContentFilter": "int",
+            "Icon": "string",
+            "ID": "int",
+            "JoinedAt": "discordtime",
+            "MemberCount": "int",
+            "MfaLevel": "int",
+            "Name": "string",
+            "OwnerID": "int",
+            "Region": "string",
+            "Roles": "slice",
+            "Splash": "string",
+            "SystemChannelID": "int",
+            "VerificationLevel": "int",
+            "VoiceStates": "slice",
+            "WidgetChannelID": "int",
+            "WidgetEnabled": "bool",
+            "GetChannel": "func",
+            "GetEmoji": "func",
+            "GetMemberPermissions": "func",
+            "GetRole": "func",
+            "GetVoiceState": "func"
+        },
+        "channel": {
+            "ID": "int",
+            "Mention": "string",
+            "Name": "string",
+            "NSFW": "bool",
+            "ParentID": "int",
+            "Topic": "string"
+        },
+        "discordtime": {
+            "Parse": "func"
+        },
+        "dot": {
+            "Guild": "guild",
+            "User": "user",
+            "Member": "member",
+            "Channel": "channel",
+            "Message": "message",
+            "Reaction": "reaction",
+            "CCID": "int",
+            "CCRunCount": "int",
+            "IsPremium": "bool",
+            "Args": "slice",
+            "CmdArgs": "slice",
+            "StrippedMsg": "string",
+            "ReactionMessage": "message",
+            "ReactionAdded": "bool",
+            "DiscordEpoch": "time",
+            "UnixEpoch": "time",
+            "TimeHour": "duration",
+            "TimeMinute": "duration",
+            "TimeSecond": "duration"
+        }
+    },
+    "functionReturn": {
+        "userArg": "user",
+        "getMember": "member"
+    }
+}

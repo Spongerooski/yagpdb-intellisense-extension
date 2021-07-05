@@ -2,7 +2,7 @@
     "name": "hm",
 	"displayName": "hm",
 	"description": "hm",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"engines": {
 		"vscode": "^1.57.0"
 	},
@@ -13,13 +13,7 @@
         "onStartupFinished"
 	],
 	"main": "./extension.js",
-	"contributes": {
-		"commands": [{
-            "command": "hm.helloWorld",
-            "title": "Hello World"
-
-		}]
-	},
+	"contributes": {},
 	"scripts": {
 		"lint": "eslint .",
 		"pretest": "npm run lint",
