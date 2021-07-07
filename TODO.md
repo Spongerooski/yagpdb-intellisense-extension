@@ -1,9 +1,9 @@
-[ ] ignore comments too
+- [ ] ignore comments too
 
-[ ] filter out variables with duplicate names
+- [ ] filter out variables with duplicate names
 
-[ ] seperate files for completion providers to make the main extension file cleaner
+- [ ] seperate files for completion providers to make the main extension file cleaner
 
-[ ] pipeline stuff
+- [ ] pipeline stuff
 
-[ ] typescreept :D
+- [ ] typescreept :D
